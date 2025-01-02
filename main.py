@@ -1,6 +1,5 @@
 import os
 import sys
-import json
 import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -10,43 +9,28 @@ from pystray import Icon, Menu, MenuItem
 from PIL import Image
 import webbrowser
 
-CONFIG_FILE = "user_info.json"
 
-def get_user_config():
-    user_name = os.getlogin()
-    print(f"username: {user_name}")
-    
 
-    if os.path.isfile(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as f:
-            return json.load(f)
-    
-    user_config = {
-        "username": user_name,
-        "screen shots_folder": f"C:\\Users\\{user_name}\\Pictures\\Screenshots"
-    }
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(user_config, f, indent=4)
-    return user_config
+
 
 class FolderMonitorHandler(FileSystemEventHandler):
     def __init__(self, folder_path):
         self.folder_path = folder_path
         self.previous_files = set(os.listdir(folder_path))
 
-    def get_next_filename(self, app_folder):
-        existing_files = os.listdir(app_folder)
-        screenshot_files = [f for f in existing_files if f.startswith("Screenshot") and f.endswith(".png")]
+    # def get_next_filename(self, app_folder):
+    #     existing_files = os.listdir(app_folder)
+    #     screenshot_files = [f for f in existing_files if f.startswith("screenshot") and f.endswith(".png")]
         
-        max_num = 0
-        for file in screenshot_files:
-            try:
-                num = int(file[10:-4])
-                max_num = max(max_num, num)
-            except ValueError:
-                continue
+    #     max_num = 0
+    #     for file in screenshot_files:
+    #         try:
+    #             num = int(file[10:-4])
+    #             max_num = max(max_num, num)
+    #         except ValueError:
+    #             continue
         
-        return f"screenshot{max_num + 1}.png"
+    #     return f"Screenshot{max_num + 1}.png"
 
     def on_any_event(self, event):
         current_files = set(os.listdir(self.folder_path))
@@ -62,9 +46,11 @@ class FolderMonitorHandler(FileSystemEventHandler):
                         app_name = parts[-1].strip()
 
                     app_folder = os.path.join(self.folder_path, "..", app_name)
+                    print(f"app_folder: {app_folder}")
                     os.makedirs(app_folder, exist_ok=True)
 
-                    new_filename = self.get_next_filename(app_folder)
+                    
+                    new_filename = f"Screenshot{len(os.listdir(app_folder))+1}.png"
 
                     src_path = os.path.join(self.folder_path, file)
                     dest_path = os.path.join(app_folder, new_filename)
@@ -74,6 +60,51 @@ class FolderMonitorHandler(FileSystemEventHandler):
                     pass
 
         self.previous_files = current_files
+def add_to_startup():
+    """Add the application to Windows startup using a batch file."""
+    try:
+        if getattr(sys, 'frozen', False):
+            exe_path = sys.executable
+        else:
+            exe_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "main.exe")
+
+        startup_folder = os.path.join(
+            os.environ.get('APPDATA'),
+            'Microsoft', 'Windows', 'Start Menu', 'Programs', 'Startup'
+        )
+
+        if not os.path.exists(startup_folder):
+            os.makedirs(startup_folder)
+
+        bat_file_path = os.path.join(startup_folder, 'screenshot_organizer.bat')
+
+        with open(bat_file_path, 'w') as bat_file:
+            bat_file.write(f'@echo off\nstart "" "{exe_path}"')
+
+        return True
+
+    except Exception as e:
+        print(f"Failed to add to startup: {str(e)}")
+        return False
+
+def create_icon():
+    """Create tray icon image"""
+    # Assuming icon.ico exists in same directory as script
+    icon_path = os.path.join(os.path.dirname(__file__), 'icon.ico')
+    return Image.open(icon_path)
+
+def is_on_startup():
+    if os.path.exists("C:\\Users\\basel\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\screenshot_organizer.bat"):
+        return True
+    
+    return False
+
+def toggle_startup():
+    if is_on_startup():
+        os.remove("C:\\Users\\basel\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\screenshot_organizer.bat")
+    else:
+        add_to_startup()
+
 
 def quit_action(icon, item, observer):
     observer.stop()
@@ -81,44 +112,9 @@ def quit_action(icon, item, observer):
     icon.stop()
     os._exit(0)
 
-def create_image():
-    if hasattr(sys, '_MEIPASS'):
-        script_dir = sys._MEIPASS
-    else:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-
-    icon_path = os.path.join(script_dir, "screen_shot_org.ico")
-    return Image.open(icon_path)
-
-def is_startup_enabled():
-    user_config = get_user_config()
-    startup_folder = os.path.join(
-        "C:","\\Users",user_config["username"],
-        "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
-    startup_app_path = os.path.join(startup_folder, "main.exe")
-    return os.path.exists(startup_app_path)
-
-def toggle_startup():
-    user_config = get_user_config()
-    startup_folder = os.path.join(
-        "C:","\\Users",user_config["username"],
-        "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
-    app_exe_name = "main.exe"
-    original_app_path = sys.executable
-    startup_app_path = os.path.join(startup_folder, app_exe_name)
-
-    if not os.path.exists(startup_app_path):
-        shutil.copy(original_app_path, startup_app_path)
-    else:
-        os.remove(startup_app_path)
-
-def open_github():
-        webbrowser.open("https://github.com/saleh-c4/Screenshot-Organizer")
-
-def main():
+if __name__ == "__main__":
     
-    user_config = get_user_config()
-    folder_to_monitor = user_config["screenshots_folder"]
+    folder_to_monitor = f"C:\\Users\\{os.getlogin()}\\Pictures\\Screenshots"
 
     if os.path.isdir(folder_to_monitor):
         event_handler = FolderMonitorHandler(folder_to_monitor)
@@ -131,9 +127,9 @@ def main():
         
 
         # Create Icon
-        icon_image = create_image()
-        icon_menu = Menu(MenuItem('Go to GitHub', open_github),
-            MenuItem('start with pc', toggle_startup,checked=lambda item: is_startup_enabled()),
+        icon_image = create_icon()
+        icon_menu = Menu(MenuItem('Go to GitHub', lambda:webbrowser.open("https://github.com/saleh-c4/Screenshot-Organizer")),
+            MenuItem('start with pc', toggle_startup, checked=lambda item:is_on_startup()),
             Menu.SEPARATOR,
             MenuItem('Quit', lambda icon, item: quit_action(icon, item, observer)))
 
@@ -145,5 +141,15 @@ def main():
         )
         tray_icon.run()
 
-if __name__ == "__main__":
-    main()
+
+
+
+
+
+
+
+
+
+
+
+
