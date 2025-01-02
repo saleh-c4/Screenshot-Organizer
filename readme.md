@@ -3,7 +3,7 @@
 Screenshot Organizer is a Python application that monitors a specified folder for new screenshots and organizes them into subfolders based on the active window's title when the screenshot was taken. The application runs in the background with a system tray icon and can be set to start with Windows.
 
 ## Features
-- Monitors a specified folder for new screenshots
+- Monitors Screenshot folder for new screenshots
 - Organizes screenshots into subfolders based on the active window's title
 - Runs in the background with a system tray icon
 - Option to start with Windows
@@ -49,4 +49,4 @@ The application can be set to start with Windows by using the "Start with PC" op
 Contributions are welcome! Please fork the repository and submit a pull request.
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License.
