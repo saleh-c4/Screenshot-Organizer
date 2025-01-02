@@ -2,20 +2,20 @@ import os
 import sys
 import json
 import threading
-import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import pygetwindow as gw
 import shutil
 from pystray import Icon, Menu, MenuItem
-from PIL import Image, ImageDraw
+from PIL import Image
 import webbrowser
 
 CONFIG_FILE = "user_info.json"
 
 def get_user_config():
     user_name = os.getlogin()
-    default_screenshot_folder = f"C:\\Users\\{user_name}\\Pictures\\Screenshots"
+    print(f"username: {user_name}")
+    
 
     if os.path.isfile(CONFIG_FILE):
         with open(CONFIG_FILE, "r") as f:
@@ -23,7 +23,7 @@ def get_user_config():
     
     user_config = {
         "username": user_name,
-        "screenshots_folder": default_screenshot_folder
+        "screen shots_folder": f"C:\\Users\\{user_name}\\Pictures\\Screenshots"
     }
     with open(CONFIG_FILE, "w") as f:
         json.dump(user_config, f, indent=4)
@@ -36,7 +36,7 @@ class FolderMonitorHandler(FileSystemEventHandler):
 
     def get_next_filename(self, app_folder):
         existing_files = os.listdir(app_folder)
-        screenshot_files = [f for f in existing_files if f.startswith("screenshot") and f.endswith(".png")]
+        screenshot_files = [f for f in existing_files if f.startswith("Screenshot") and f.endswith(".png")]
         
         max_num = 0
         for file in screenshot_files:
@@ -93,7 +93,7 @@ def create_image():
 def is_startup_enabled():
     user_config = get_user_config()
     startup_folder = os.path.join(
-        user_config["user_profile"],
+        "C:","\\Users",user_config["username"],
         "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
     startup_app_path = os.path.join(startup_folder, "main.exe")
     return os.path.exists(startup_app_path)
@@ -101,7 +101,7 @@ def is_startup_enabled():
 def toggle_startup():
     user_config = get_user_config()
     startup_folder = os.path.join(
-        user_config["user_profile"], 
+        "C:","\\Users",user_config["username"],
         "AppData", "Roaming", "Microsoft", "Windows", "Start Menu", "Programs", "Startup")
     app_exe_name = "main.exe"
     original_app_path = sys.executable
@@ -129,6 +129,8 @@ def main():
         observer_thread.daemon = True
         observer_thread.start()
         
+
+        # Create Icon
         icon_image = create_image()
         icon_menu = Menu(MenuItem('Go to GitHub', open_github),
             MenuItem('start with pc', toggle_startup,checked=lambda item: is_startup_enabled()),
