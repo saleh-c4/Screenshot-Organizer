@@ -18,19 +18,6 @@ class FolderMonitorHandler(FileSystemEventHandler):
         self.folder_path = folder_path
         self.previous_files = set(os.listdir(folder_path))
 
-    # def get_next_filename(self, app_folder):
-    #     existing_files = os.listdir(app_folder)
-    #     screenshot_files = [f for f in existing_files if f.startswith("screenshot") and f.endswith(".png")]
-        
-    #     max_num = 0
-    #     for file in screenshot_files:
-    #         try:
-    #             num = int(file[10:-4])
-    #             max_num = max(max_num, num)
-    #         except ValueError:
-    #             continue
-        
-    #     return f"Screenshot{max_num + 1}.png"
 
     def on_any_event(self, event):
         current_files = set(os.listdir(self.folder_path))
