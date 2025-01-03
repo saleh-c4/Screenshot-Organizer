@@ -116,6 +116,8 @@ if __name__ == "__main__":
     
     folder_to_monitor = f"C:\\Users\\{os.getlogin()}\\Pictures\\Screenshots"
 
+    os.makedirs(folder_to_monitor, exist_ok=True)
+
     if os.path.isdir(folder_to_monitor):
         event_handler = FolderMonitorHandler(folder_to_monitor)
         observer = Observer()
