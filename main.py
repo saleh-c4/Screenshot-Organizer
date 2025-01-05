@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import threading
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -8,7 +9,6 @@ import shutil
 from pystray import Icon, Menu, MenuItem
 from PIL import Image
 import webbrowser
-
 
 
 
@@ -27,12 +27,16 @@ class FolderMonitorHandler(FileSystemEventHandler):
             if file.endswith(".png"):
                 try:
                     window = gw.getActiveWindow()
-                    app_name = "Unknown"
+                    app_name = "Unknown" # default app_name name
                     if window:
                         parts = window.title.split(' - ')
                         app_name = parts[-1].strip()
 
-                    app_folder = os.path.join(self.folder_path, "..", app_name)
+                    if json_data['group_in_screenshots']:
+                        app_folder = os.path.join(self.folder_path, app_name)
+                    else:
+                        app_folder = os.path.join(self.folder_path, "..", app_name)
+
                     print(f"app_folder: {app_folder}")
                     os.makedirs(app_folder, exist_ok=True)
 
@@ -80,18 +84,28 @@ def create_icon():
     icon_path = os.path.join(os.path.dirname(__file__), 'icon.ico')
     return Image.open(icon_path)
 
+
+
+def toggle_startup():
+    if is_on_startup():
+        os.remove(f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\screenshot_organizer.bat")
+    else:
+        add_to_startup()
+
 def is_on_startup():
-    if os.path.exists("C:\\Users\\basel\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\screenshot_organizer.bat"):
+    if os.path.exists(f"C:\\Users\\{os.getlogin()}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\screenshot_organizer.bat"):
         return True
     
     return False
 
-def toggle_startup():
-    if is_on_startup():
-        os.remove("C:\\Users\\basel\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\screenshot_organizer.bat")
+def toggle_subfolders():
+    if json_data['group_in_screenshots'] == True:
+        json_data['group_in_screenshots'] = False
     else:
-        add_to_startup()
-
+        json_data['group_in_screenshots'] = True    
+    
+    with open(userjsonfile,'w') as f: 
+        json.dump(json_data,f)
 
 def quit_action(icon, item, observer):
     observer.stop()
@@ -100,6 +114,19 @@ def quit_action(icon, item, observer):
     os._exit(0)
 
 if __name__ == "__main__":
+
+    userjsonfile = 'user.json'
+    json_data = {
+        "group_in_screenshots": False
+    }
+    
+    if not os.path.exists(userjsonfile):
+        with open(userjsonfile,'w') as f: 
+            json.dump(json_data,f)
+    else:
+        with open(userjsonfile,'r') as f: 
+            json_data = json.load(f)
+
     
     folder_to_monitor = f"C:\\Users\\{os.getlogin()}\\Pictures\\Screenshots"
 
@@ -118,6 +145,7 @@ if __name__ == "__main__":
         # Create Icon
         icon_image = create_icon()
         icon_menu = Menu(MenuItem('Go to GitHub', lambda:webbrowser.open("https://github.com/saleh-c4/Screenshot-Organizer")),
+            MenuItem('Group in screnshots', toggle_subfolders, checked=lambda item:json_data['group_in_screenshots']),
             MenuItem('start with pc', toggle_startup, checked=lambda item:is_on_startup()),
             Menu.SEPARATOR,
             MenuItem('Quit', lambda icon, item: quit_action(icon, item, observer)))
