@@ -39,8 +39,10 @@ Screenshot Organizer is a Python application that monitors a specified folder fo
 
 3. Use the system tray icon to access options:
     - **Go to GitHub**: Opens the GitHub repository in your default web browser.
+    - **Group in screenshots**: Toggles whether the application creates app directories as a child or sibling of screenshots folder
     - **Start with PC**: Toggles whether the application starts with Windows.
     - **Quit**: Exits the application.
+    
 
 ## Adding to Startup
 The application can be set to start with Windows by using the "Start with PC" option in the system tray menu. This creates a batch file in the Windows startup folder to launch the application on startup.
