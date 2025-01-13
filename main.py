@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import threading
+import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import pygetwindow as gw
@@ -10,7 +11,7 @@ from pystray import Icon, Menu, MenuItem
 from PIL import Image
 import webbrowser
 
-
+# FIXED: fix win shift s (0 bytes)
 
 
 class FolderMonitorHandler(FileSystemEventHandler):
@@ -42,6 +43,8 @@ class FolderMonitorHandler(FileSystemEventHandler):
 
                     
                     new_filename = f"Screenshot{len(os.listdir(app_folder))+1}.png"
+
+                    time.sleep(0.5)
 
                     src_path = os.path.join(self.folder_path, file)
                     dest_path = os.path.join(app_folder, new_filename)
